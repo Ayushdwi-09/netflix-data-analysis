@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix Titles Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+  :root {
+    --red: #E50914;
+    --red-dim: #8b0000;
+    --dark: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --accent: #ff6b35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(229,9,20,0.09) 0%, transparent 100%);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-shadow: 0 0 30px rgba(229,9,20,0.5);
+  }
+  .logo span { color: var(--text); }
+
+  .header-stats { display: flex; gap: 28px; }
+  .hstat { text-align: right; }
+  .hstat-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--red); line-height: 1; }
+  .hstat-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
+
+  main {
+    padding: 32px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(12, 1fr);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card:nth-child(1){animation-delay:0s}
+  .card:nth-child(2){animation-delay:.05s}
+  .card:nth-child(3){animation-delay:.1s}
+  .card:nth-child(4){animation-delay:.15s}
+  .card:nth-child(5){animation-delay:.2s}
+  .card:nth-child(6){animation-delay:.25s}
+  .card:nth-child(7){animation-delay:.3s}
+
+  .card-title { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 3px; color: var(--text-muted); margin-bottom: 18px; }
+
+  .card-filters   { grid-column: span 12; background: transparent; border: none; padding: 0; }
+  .card-filters::after { display: none; }
+  .card-donut     { grid-column: span 4; }
+  .card-bar-year  { grid-column: span 8; }
+  .card-genres    { grid-column: span 7; }
+  .card-countries { grid-column: span 5; }
+  .card-ratings   { grid-column: span 5; }
+  .card-release   { grid-column: span 7; }
+
+  .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .filter-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); }
+  .filter-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 6px 16px; border-radius: 2px; font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--red); color: var(--text); }
+  .filter-btn.active { background: var(--red); border-color: var(--red); color: white; }
+
+  .donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-size: 0.8rem; color: var(--text-muted); }
+  .legend-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--text); line-height: 1; }
+  .legend-pct { font-size: 0.7rem; color: var(--text-muted); }
+
+  .hbar-list { display: flex; flex-direction: column; gap: 9px; }
+  .hbar-item { display: flex; align-items: center; gap: 10px; }
+  .hbar-label { font-size: 0.75rem; color: var(--text-muted); min-width: 155px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbar-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+  .hbar-fill {
+    height: 100%; border-radius: 2px; transform-origin: left;
+    animation: barGrow 0.8s cubic-bezier(0.22,1,0.36,1) both;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .hbar-val { font-size: 0.75rem; color: var(--text); min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .timeline-wrap { display: flex; align-items: flex-end; gap: 5px; height: 130px; }
+  .tbar-col { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; min-width: 0; }
+  .tbar-bar {
+    width: 100%; border-radius: 2px 2px 0 0; min-height: 3px; cursor: pointer;
+    transition: opacity 0.2s;
+    animation: barUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    animation-delay: var(--d, 0s); transform-origin: bottom;
+  }
+  .tbar-bar:hover { opacity: 0.7; }
+  @keyframes barUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .tbar-label { font-size: 0.55rem; color: var(--text-muted); white-space: nowrap; writing-mode: vertical-lr; transform: rotate(180deg); height: 26px; }
+
+  .ratings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .rating-pill {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 3px;
+    padding: 9px 12px; display: flex; justify-content: space-between; align-items: center;
+    cursor: default; transition: border-color 0.2s;
+  }
+  .rating-pill:hover { border-color: var(--red); }
+  .rating-badge { font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 1px; padding: 2px 6px; border-radius: 2px; background: var(--surface3); color: var(--text); }
+  .rating-count { font-size: 0.82rem; color: var(--text-muted); }
+  .rating-bar-mini { height: 3px; border-radius: 1px; margin-top: 5px; animation: barGrow 1s cubic-bezier(0.22,1,0.36,1) both; animation-delay: var(--d, 0s); }
+
+  .tooltip {
+    position: fixed; background: #1e1e1e; border: 1px solid var(--border);
+    padding: 7px 11px; font-size: 0.75rem; border-radius: 2px;
+    pointer-events: none; z-index: 9998; opacity: 0; transition: opacity 0.1s; white-space: nowrap;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip strong { color: var(--red); }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--red-dim); }
+</style>
+</head>
+<body>
+
+<div class="tooltip" id="tooltip"></div>
+
+<header>
+  <div class="logo">Net<span>Data</span></div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-num" id="h-total">8,807</div><div class="hstat-label">Total Titles</div></div>
+    <div class="hstat"><div class="hstat-num" id="h-movies">6,131</div><div class="hstat-label">Movies</div></div>
+    <div class="hstat"><div class="hstat-num" id="h-tvshows">2,676</div><div class="hstat-label">TV Shows</div></div>
+    <div class="hstat"><div class="hstat-num">2021</div><div class="hstat-label">Latest Year</div></div>
+  </div>
+</header>
+
+<main>
+  <div class="card card-filters">
+    <div class="filter-row">
+      <span class="filter-label">Filter by type:</span>
+      <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+      <button class="filter-btn" onclick="setFilter('Movie',this)">Movies</button>
+      <button class="filter-btn" onclick="setFilter('TV Show',this)">TV Shows</button>
+    </div>
+  </div>
+
+  <div class="card card-donut">
+    <div class="card-title">Content Type Split</div>
+    <div class="donut-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120" style="flex-shrink:0">
+        <circle cx="60" cy="60" r="44" fill="none" stroke="#222" stroke-width="16"/>
+        <circle id="arc-movie" cx="60" cy="60" r="44" fill="none" stroke="#E50914" stroke-width="16"
+          stroke-dasharray="192 276.5" stroke-dashoffset="0"
+          style="transform:rotate(-90deg);transform-origin:60px 60px;transition:stroke-dasharray 0.7s ease,stroke-dashoffset 0.7s ease"/>
+        <circle id="arc-tv" cx="60" cy="60" r="44" fill="none" stroke="#ff6b35" stroke-width="16"
+          stroke-dasharray="84 276.5" stroke-dashoffset="-192"
+          style="transform:rotate(-90deg);transform-origin:60px 60px;transition:stroke-dasharray 0.7s ease,stroke-dashoffset 0.7s ease"/>
+        <text id="donut-pct" x="60" y="55" text-anchor="middle" fill="#f0f0f0"
+          font-family="'Bebas Neue',sans-serif" font-size="15">69.6%</text>
+        <text id="donut-lbl" x="60" y="69" text-anchor="middle" fill="#888"
+          font-size="8" font-family="'DM Sans',sans-serif">Movies</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#E50914"></div>
+          <div>
+            <div class="legend-val" id="leg-movies">6,131</div>
+            <div class="legend-label">Movies</div>
+            <div class="legend-pct" id="leg-movies-pct">69.6%</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff6b35"></div>
+          <div>
+            <div class="legend-val" id="leg-tv">2,676</div>
+            <div class="legend-label">TV Shows</div>
+            <div class="legend-pct" id="leg-tv-pct">30.4%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-bar-year">
+    <div class="card-title">Content Added Per Year</div>
+    <div class="timeline-wrap" id="year-bars"></div>
+  </div>
+
+  <div class="card card-genres">
+    <div class="card-title">Top 10 Genres</div>
+    <div class="hbar-list" id="genre-bars"></div>
+  </div>
+
+  <div class="card card-countries">
+    <div class="card-title">Top Countries</div>
+    <div class="hbar-list" id="country-bars"></div>
+  </div>
+
+  <div class="card card-ratings">
+    <div class="card-title">Content Ratings</div>
+    <div class="ratings-grid" id="ratings-grid"></div>
+  </div>
+
+  <div class="card card-release">
+    <div class="card-title">Titles by Release Year (2007–2021)</div>
+    <div class="timeline-wrap" id="release-bars"></div>
+  </div>
+</main>
+
+<script>
+var DATA = {
+  all: {
+    moviesAll:6131, tvshows:2676, total:8807,
+    yearsAdded:{2008:2,2009:2,2010:1,2011:13,2012:3,2013:10,2014:23,2015:73,2016:418,2017:1164,2018:1625,2019:1999,2020:1878,2021:1498},
+    genres:[['International Movies',2752],['Dramas',2427],['Comedies',1674],['International TV Shows',1351],['Documentaries',869],['Action & Adventure',859],['TV Dramas',763],['Independent Movies',756],['Children & Family Movies',641],['Romantic Movies',616]],
+    countries:[['United States',3689],['India',1046],['United Kingdom',804],['Canada',445],['France',393],['Japan',318],['Spain',232],['South Korea',231],['Germany',226],['Mexico',169]],
+    ratings:[['TV-MA',3207],['TV-14',2160],['TV-PG',863],['R',799],['PG-13',490],['TV-Y7',334],['TV-Y',307],['PG',287],['TV-G',220],['NR',80]],
+    release:{2007:88,2008:136,2009:152,2010:194,2011:185,2012:237,2013:288,2014:352,2015:560,2016:902,2017:1032,2018:1147,2019:1030,2020:953,2021:592}
+  },
+  Movie: {
+    moviesAll:6131, tvshows:0, total:6131,
+    yearsAdded:{2008:2,2009:2,2010:1,2011:10,2012:3,2013:8,2014:17,2015:55,2016:316,2017:891,2018:1231,2019:1427,2020:1275,2021:893},
+    genres:[['International Movies',2752],['Dramas',1717],['Comedies',1237],['Documentaries',869],['Action & Adventure',597],['Independent Movies',756],['Children & Family Movies',641],['Romantic Movies',616],['Thrillers',493],['Horror Movies',357]],
+    countries:[['United States',2497],['India',901],['United Kingdom',501],['Canada',318],['France',298],['Japan',220],['Germany',180],['Spain',162],['Australia',138],['Mexico',126]],
+    ratings:[['R',799],['PG-13',490],['TV-MA',1108],['PG',287],['TV-14',632],['NR',80],['TV-PG',342],['G',56],['TV-Y7',134],['TV-G',86]],
+    release:{2007:65,2008:100,2009:115,2010:145,2011:135,2012:175,2013:215,2014:260,2015:412,2016:662,2017:760,2018:843,2019:763,2020:710,2021:443}
+  },
+  'TV Show': {
+    moviesAll:0, tvshows:2676, total:2676,
+    yearsAdded:{2011:3,2013:2,2014:6,2015:18,2016:102,2017:273,2018:394,2019:572,2020:603,2021:605},
+    genres:[['International TV Shows',1351],['TV Dramas',763],['TV Comedies',581],['Crime TV Shows',479],['Kids TV',451],['Docuseries',395],['TV Action & Adventure',329],['Reality TV',322],['Anime Series',313],['British TV Shows',171]],
+    countries:[['United States',1192],['United Kingdom',303],['Japan',219],['South Korea',209],['India',145],['Canada',127],['France',95],['Spain',70],['Australia',59],['Taiwan',44]],
+    ratings:[['TV-MA',2099],['TV-14',1528],['TV-PG',521],['TV-Y7',200],['TV-Y',221],['TV-G',134],['TV-Y7-FV',62],['NR',38],['PG',12],['PG-13',11]],
+    release:{2007:23,2008:36,2009:37,2010:49,2011:50,2012:62,2013:73,2014:92,2015:148,2016:240,2017:272,2018:304,2019:267,2020:243,2021:149}
+  }
+};
+
+var PALETTE = ['#E50914','#FF3D3D','#FF6B35','#FFA03E','#FFD166','#06D6A0','#118AB2','#8338EC','#FB5607','#ef476f'];
+
+// Tooltip
+var tipEl = document.getElementById('tooltip');
+var tipOn = false;
+document.addEventListener('mousemove', function(e){ if(tipOn){ tipEl.style.left=(e.clientX+14)+'px'; tipEl.style.top=(e.clientY-36)+'px'; }});
+function showTip(e,html){ tipEl.innerHTML=html; tipEl.classList.add('show'); tipOn=true; tipEl.style.left=(e.clientX+14)+'px'; tipEl.style.top=(e.clientY-36)+'px'; }
+function hideTip(){ tipEl.classList.remove('show'); tipOn=false; }
+
+function fmt(n){ return Number(n).toLocaleString(); }
+
+function renderDonut(d){
+  var circ = 2*Math.PI*44;
+  var total = d.total || 1;
+  var mc = d.moviesAll || 0;
+  var tc = d.tvshows || 0;
+  var mArc = (mc/total)*circ;
+  var tArc = (tc/total)*circ;
+  var mPct = (mc/total*100).toFixed(1);
+  var tPct = (tc/total*100).toFixed(1);
+
+  document.getElementById('arc-movie').setAttribute('stroke-dasharray', mArc+' '+circ);
+  document.getElementById('arc-movie').setAttribute('stroke-dashoffset', '0');
+  document.getElementById('arc-tv').setAttribute('stroke-dasharray', tArc+' '+circ);
+  document.getElementById('arc-tv').setAttribute('stroke-dashoffset', String(-mArc));
+
+  document.getElementById('donut-pct').textContent = mPct+'%';
+  document.getElementById('donut-lbl').textContent = 'Movies';
+  document.getElementById('leg-movies').textContent = fmt(mc);
+  document.getElementById('leg-tv').textContent = fmt(tc);
+  document.getElementById('leg-movies-pct').textContent = mPct+'%';
+  document.getElementById('leg-tv-pct').textContent = tPct+'%';
+}
+
+function renderTimeline(id, obj, colorFn){
+  var el = document.getElementById(id);
+  el.innerHTML = '';
+  var entries = Object.keys(obj).sort(function(a,b){return+a-+b;}).map(function(k){return[k,obj[k]];});
+  var maxVal = Math.max.apply(null, entries.map(function(e){return+e[1];}));
+  var trackH = 100;
+  entries.forEach(function(entry, i){
+    var year=entry[0], count=+entry[1];
+    var barH = Math.max(3, Math.round((count/maxVal)*trackH));
+    var col = document.createElement('div');
+    col.className = 'tbar-col';
+    var bar = document.createElement('div');
+    bar.className = 'tbar-bar';
+    bar.style.cssText = 'height:'+barH+'px;background:'+colorFn(i,entries.length)+';--d:'+(i*0.035)+'s';
+    bar.addEventListener('mouseenter', function(e){ showTip(e,'<strong>'+year+'</strong>: '+fmt(count)+' titles'); });
+    bar.addEventListener('mouseleave', hideTip);
+    var lbl = document.createElement('div');
+    lbl.className = 'tbar-label';
+    lbl.textContent = year;
+    col.appendChild(bar);
+    col.appendChild(lbl);
+    el.appendChild(col);
+  });
+}
+
+function renderHBars(id, data){
+  var el = document.getElementById(id);
+  el.innerHTML = '';
+  var maxVal = Math.max.apply(null, data.map(function(d){return d[1];}));
+  data.forEach(function(item, i){
+    var label=item[0], count=item[1];
+    var pct = (count/maxVal)*100;
+    var row = document.createElement('div');
+    row.className = 'hbar-item';
+    row.innerHTML =
+      '<div class="hbar-label" title="'+label+'">'+label+'</div>'+
+      '<div class="hbar-track"><div class="hbar-fill" style="width:'+pct+'%;background:'+PALETTE[i%PALETTE.length]+';--d:'+(i*0.055)+'s"></div></div>'+
+      '<div class="hbar-val">'+fmt(count)+'</div>';
+    el.appendChild(row);
+  });
+}
+
+function renderRatings(data){
+  var el = document.getElementById('ratings-grid');
+  el.innerHTML = '';
+  var maxVal = Math.max.apply(null, data.map(function(d){return d[1];}));
+  data.slice(0,8).forEach(function(item,i){
+    var rating=item[0], count=item[1];
+    var pct = (count/maxVal)*100;
+    var pill = document.createElement('div');
+    pill.className = 'rating-pill';
+    pill.innerHTML =
+      '<div>'+
+        '<div class="rating-badge">'+rating+'</div>'+
+        '<div class="rating-bar-mini" style="width:'+pct+'%;background:'+PALETTE[i%PALETTE.length]+';--d:'+(i*0.07)+'s"></div>'+
+      '</div>'+
+      '<div class="rating-count">'+fmt(count)+'</div>';
+    pill.addEventListener('mouseenter', function(e){ showTip(e,'<strong>'+rating+'</strong>: '+fmt(count)+' titles'); });
+    pill.addEventListener('mouseleave', hideTip);
+    el.appendChild(pill);
+  });
+}
+
+function renderAll(filter){
+  var d = DATA[filter] || DATA['all'];
+  document.getElementById('h-total').textContent = fmt(d.total);
+  document.getElementById('h-movies').textContent = fmt(d.moviesAll);
+  document.getElementById('h-tvshows').textContent = fmt(d.tvshows);
+  renderDonut(d);
+  renderTimeline('year-bars', d.yearsAdded, function(i,n){ return 'hsl('+(i*(20/n))+',80%,'+(46+i*(8/n))+'%)'; });
+  renderHBars('genre-bars', d.genres);
+  renderHBars('country-bars', d.countries);
+  renderRatings(d.ratings);
+  renderTimeline('release-bars', d.release, function(i,n){ return 'hsl('+(200+i*(130/n))+',68%,50%)'; });
+}
+
+function setFilter(val, btn){
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderAll(val);
+}
+
+// Init after DOM ready
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){ renderAll('all'); });
+} else {
+  renderAll('all');
+}
+</script>
+</body>
+</html>
